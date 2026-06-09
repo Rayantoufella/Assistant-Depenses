@@ -1,0 +1,1 @@
+# AGENTS.md — Assistant Dépenses
