@@ -1,0 +1,47 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+project: Assistant Dépenses
+context: |
+  Application Laravel 13 (PHP 8.4) de suivi des dépenses pour un commerçant.
+  Il colle le texte d'un reçu fournisseur (souvent en darija, mal formaté),
+  l'IA (Groq via le SDK officiel laravel/ai) extrait les articles en structured output.
+
+  ENVIRONNEMENT :
+  - Laravel Sail (Docker) : toute commande artisan/composer passe par ./vendor/bin/sail
+  - MySQL uniquement, pas de Redis. QUEUE_CONNECTION=database (tables jobs déjà migrées)
+  - Auth : Laravel Breeze stack Blade
+
+  RÈGLES D'ARCHITECTURE NON NÉGOCIABLES :
+  - Tout appel IA est asynchrone : Job ExtraireDepensesDuRecu + queue database. Jamais d'appel IA dans un contrôleur.
+  - Validation via Form Request (StoreRecuRequest) AVANT tout appel IA.
+  - Eloquent Casts obligatoires : statut => enum StatutRecu (en_attente/traite/echoue),
+    categorie => enum CategorieDepense (alimentaire/boissons/hygiene/entretien/autre),
+    payload_brut => array.
+  - Relation : User hasMany Recu, Recu hasMany Depense. Eager loading partout, zéro N+1.
+  - Noms de colonnes sans accent (libelle, quantite, categorie).
+  - L'utilisateur ne voit et ne manipule QUE ses propres reçus/dépenses.
+
+  CONTRAT JSON (structured output, schema laravel/ai) :
+  { "articles": [ { "libelle": string, "quantite": integer, "prix_unitaire": number,
+    "categorie": enum(alimentaire|boissons|hygiene|entretien|autre) } ],
+    "total_estime": number, "devise": string }
+
+
